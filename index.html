@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Handify — Reconocimiento de Lengua de Señas Peruana con IA en tiempo real" />
+  <meta name="theme-color" content="#0d0d0b" />
+  <title>Handify — Lengua de Señas Peruana</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.1/dist/hand-pose-detection.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ══════════════ SPLASH ══════════════ -->
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-hand">
+      <svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Palm -->
+        <path d="M20 55 C18 55 14 52 14 46 L14 28 C14 24 17 22 20 22 C23 22 26 24 26 28 L26 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Index -->
+        <path d="M26 44 L26 18 C26 14 29 12 32 12 C35 12 38 14 38 18 L38 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Middle -->
+        <path d="M38 44 L38 16 C38 12 41 10 44 10 C47 10 50 12 50 16 L50 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Ring -->
+        <path d="M50 44 L50 20 C50 16 53 14 56 14 C59 14 62 16 62 20 L62 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Pinky -->
+        <path d="M62 44 L62 26 C62 22 65 20 68 20 C71 20 74 22 74 26 L74 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Palm base -->
+        <path d="M14 46 C14 56 18 65 26 70 L56 70 C64 65 68 56 68 46 L68 44 L14 44 Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <h1 class="splash-title">Handify</h1>
+    <p class="splash-sub">Lengua de Señas Peruana · IA en tiempo real</p>
+    <div class="splash-loader"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app" class="hidden">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 80 100" fill="none">
+        <path d="M20 55 C18 55 14 52 14 46 L14 28 C14 24 17 22 20 22 C23 22 26 24 26 28 L26 44" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M26 44 L26 18 C26 14 29 12 32 12 C35 12 38 14 38 18 L38 44" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M38 44 L38 16 C38 12 41 10 44 10 C47 10 50 12 50 16 L50 44" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M50 44 L50 20 C50 16 53 14 56 14 C59 14 62 16 62 20 L62 44" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M62 44 L62 26 C62 22 65 20 68 20 C71 20 74 22 74 26 L74 44" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M14 46 C14 56 18 65 26 70 L56 70 C64 65 68 56 68 46 L68 44 L14 44 Z" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span>Handify</span>
+      <span class="brand-badge">LSP</span>
+    </div>
+    <nav id="desktopNav">
+      <button class="nav-btn active" data-tab="detector">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Detectar
+      </button>
+      <button class="nav-btn" data-tab="diccionario">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Diccionario
+      </button>
+      <button class="nav-btn" data-tab="aprender">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Aprender
+      </button>
+      <button class="nav-btn" data-tab="acerca">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Acerca
+      </button>
+    </nav>
+    <button id="themeToggle" title="Cambiar tema" aria-label="Cambiar tema">
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- ══════ TAB: DETECTOR ══════ -->
+  <section id="tab-detector" class="tab active">
+    <div class="detector-grid">
+
+      <!-- ── Panel Cámara ── -->
+      <div class="camera-panel">
+        <div class="camera-wrap" id="cameraWrap">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="canvas"></canvas>
+
+          <!-- Idle state -->
+          <div class="camera-idle" id="cameraIdle">
+            <div class="idle-pulse">
+              <svg viewBox="0 0 80 100" fill="none" width="60">
+                <path d="M20 55 C18 55 14 52 14 46 L14 28 C14 24 17 22 20 22 C23 22 26 24 26 28 L26 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M26 44 L26 18 C26 14 29 12 32 12 C35 12 38 14 38 18 L38 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M38 44 L38 16 C38 12 41 10 44 10 C47 10 50 12 50 16 L50 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M50 44 L50 20 C50 16 53 14 56 14 C59 14 62 16 62 20 L62 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M14 46 C14 56 18 65 26 70 L56 70 C64 65 68 56 68 46 L68 44 L14 44 Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p class="idle-title">Activa la cámara</p>
+            <p class="idle-sub">para comenzar la detección de señas</p>
+          </div>
+
+          <!-- Overlays -->
+          <div class="cam-overlay-tl" id="detectionBadge">
+            <span class="badge-dot"></span>
+            <span id="badgeText">Detectando</span>
+          </div>
+          <div class="cam-overlay-tr" id="fpsCounter">-- fps</div>
+          <div class="cam-overlay-bl" id="handCount">Sin manos</div>
+        </div>
+
+        <!-- Controles -->
+        <div class="camera-controls">
+          <button id="btnCamera" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+            </svg>
+            <span id="btnCameraText">Iniciar cámara</span>
+          </button>
+          <div class="ctrl-group">
+            <button id="btnVoice" class="btn-icon" title="Activar voz">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+            <button id="btnFlip" class="btn-icon" title="Voltear cámara">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+              </svg>
+            </button>
+            <button id="btnClear" class="btn-icon" title="Nueva sesión">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+              </svg>
+            </button>
+            <button id="btnFullscreen" class="btn-icon" title="Pantalla completa">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode Selector -->
+        <div class="mode-selector">
+          <button class="mode-btn active" data-mode="auto">
+            <span class="mode-icon">🤖</span> Auto
+          </button>
+          <button class="mode-btn" data-mode="manual">
+            <span class="mode-icon">✋</span> Manual
+          </button>
+          <button class="mode-btn" data-mode="teach">
+            <span class="mode-icon">📚</span> Enseñar
+          </button>
+        </div>
+
+        <!-- Speed control -->
+        <div class="speed-control">
+          <label>Sensibilidad: <span id="speedVal">Media</span></label>
+          <input type="range" id="speedRange" min="1" max="3" value="2" />
+        </div>
+      </div>
+
+      <!-- ── Panel Output ── -->
+      <div class="output-panel">
+
+        <!-- Seña detectada -->
+        <div class="result-card" id="resultCard">
+          <div class="result-top">
+            <div class="result-label">Seña detectada</div>
+            <div class="result-emoji" id="resultEmoji">—</div>
+          </div>
+          <div class="result-sign" id="resultSign">—</div>
+          <div class="result-meta">
+            <span class="result-category" id="resultCategory">Esperando señas...</span>
+          </div>
+          <div class="result-desc" id="resultDesc"></div>
+          <div class="confidence-wrap">
+            <div class="confidence-bar">
+              <div class="confidence-fill" id="confidenceFill" style="width:0%"></div>
+            </div>
+            <div class="confidence-label" id="confidenceLabel">Confianza: —</div>
+          </div>
+        </div>
+
+        <!-- Traducción -->
+        <div class="translation-card">
+          <div class="translation-header">
+            <div class="th-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Traducción en tiempo real
+            </div>
+            <div class="translation-actions">
+              <button id="btnCopy" title="Copiar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              </button>
+              <button id="btnSpeak" title="Escuchar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+              </button>
+              <button id="btnClearText" title="Limpiar texto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="translation-text" id="translationText">
+            <span class="placeholder-text">Las señas detectadas aparecerán aquí como texto...</span>
+          </div>
+          <div class="translation-footer">
+            <span id="wordCount">0 palabras</span>
+            <span id="sessionTime">Sesión: 00:00</span>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="history-card">
+          <div class="history-header">
+            <div class="hh-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Historial de sesión
+            </div>
+            <span id="historyCount" class="history-count">0</span>
+          </div>
+          <div class="history-list" id="historyList">
+            <div class="history-empty">Sin historial aún</div>
+          </div>
+        </div>
+
+        <!-- Manual Panel -->
+        <div class="extra-panel hidden" id="manualPanel">
+          <div class="extra-panel-title">✋ Seleccionar seña manualmente</div>
+          <div class="filter-row" id="manualCatFilter"></div>
+          <div class="manual-grid" id="manualGrid"></div>
+        </div>
+
+        <!-- Teach Panel -->
+        <div class="extra-panel hidden" id="teachPanel">
+          <div class="extra-panel-title">📚 Enseñar nueva seña</div>
+          <div class="teach-form">
+            <div class="form-group">
+              <label>Nombre de la seña *</label>
+              <input type="text" id="teachName" placeholder="ej: Amor, Trabajo, Casa..." maxlength="40" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Categoría</label>
+                <input type="text" id="teachCategory" placeholder="ej: Sentimientos" maxlength="30" list="catSuggestions"/>
+                <datalist id="catSuggestions"></datalist>
+              </div>
+              <div class="form-group">
+                <label>Emoji</label>
+                <input type="text" id="teachEmoji" placeholder="🤟" maxlength="4" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Descripción del gesto</label>
+              <input type="text" id="teachDesc" placeholder="ej: Puño cerrado con pulgar hacia arriba" maxlength="120" />
+            </div>
+            <div class="form-group">
+              <label>Consejo para hacerlo bien</label>
+              <input type="text" id="teachTips" placeholder="ej: Mantén el codo a 90 grados" maxlength="120" />
+            </div>
+            <button id="btnCapture" class="btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M20.94 11A9 9 0 1 1 12.01 3"/>
+              </svg>
+              Guardar en diccionario
+            </button>
+          </div>
+          <div id="teachFeedback" class="teach-feedback"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ TAB: DICCIONARIO ══════ -->
+  <section id="tab-diccionario" class="tab hidden">
+    <div class="page-header">
+      <div>
+        <h2>Diccionario LSP</h2>
+        <p>Base de datos de señas — edita, busca y explora</p>
+      </div>
+      <button class="btn-primary btn-sm" id="btnExport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar JSON
+      </button>
+    </div>
+
+    <div class="dict-toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="dictSearch" placeholder="Buscar por nombre, categoría o descripción..." />
+        <span id="dictResultCount" class="dict-result-count"></span>
+      </div>
+      <div class="filter-chips" id="filterChips"></div>
+    </div>
+
+    <div class="dict-grid" id="dictGrid"></div>
+
+    <div class="dict-stats">
+      <div class="stat-item">
+        <span id="totalSigns" class="stat-num">0</span>
+        <small>Señas totales</small>
+      </div>
+      <div class="stat-item">
+        <span id="totalCategories" class="stat-num">0</span>
+        <small>Categorías</small>
+      </div>
+      <div class="stat-item">
+        <span id="totalCustom" class="stat-num">0</span>
+        <small>Custom / Tuyas</small>
+      </div>
+      <div class="stat-item">
+        <span id="totalDetected" class="stat-num">0</span>
+        <small>Detectadas hoy</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ TAB: APRENDER ══════ -->
+  <section id="tab-aprender" class="tab hidden">
+    <div class="page-header">
+      <div>
+        <h2>Aprende LSP</h2>
+        <p>Guía visual interactiva · Lengua de Señas Peruana</p>
+      </div>
+    </div>
+
+    <div class="learn-layout">
+      <div class="learn-sidebar">
+        <div class="learn-sidebar-title">Categorías</div>
+        <div class="learn-categories" id="learnCategories"></div>
+        <div class="learn-progress-wrap">
+          <div class="learn-progress-title">Tu progreso</div>
+          <div id="learnProgress"></div>
+        </div>
+      </div>
+      <div class="learn-main">
+        <div class="learn-placeholder" id="learnPlaceholder">
+          <div class="learn-ph-icon">👈</div>
+          <p>Selecciona una categoría para ver las señas</p>
+        </div>
+        <div class="learn-grid hidden" id="learnGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ TAB: ACERCA ══════ -->
+  <section id="tab-acerca" class="tab hidden">
+    <div class="about-wrap">
+      <div class="about-hero">
+        <div class="about-logo-wrap">
+          <svg viewBox="0 0 80 100" fill="none" width="70">
+            <path d="M20 55 C18 55 14 52 14 46 L14 28 C14 24 17 22 20 22 C23 22 26 24 26 28 L26 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M26 44 L26 18 C26 14 29 12 32 12 C35 12 38 14 38 18 L38 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M38 44 L38 16 C38 12 41 10 44 10 C47 10 50 12 50 16 L50 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M50 44 L50 20 C50 16 53 14 56 14 C59 14 62 16 62 20 L62 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M62 44 L62 26 C62 22 65 20 68 20 C71 20 74 22 74 26 L74 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M14 46 C14 56 18 65 26 70 L56 70 C64 65 68 56 68 46 L68 44 L14 44 Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1>Handify</h1>
+        <p class="about-tagline">Reconocimiento de Lengua de Señas Peruana<br/>con Inteligencia Artificial · Open Source</p>
+        <div class="about-badges">
+          <span>v1.0.0</span><span>MIT License</span><span>🇵🇪 LSP</span><span>Open Source</span>
+        </div>
+      </div>
+
+      <div class="about-cards">
+        <div class="about-card">
+          <div class="about-card-icon">🤖</div>
+          <h3>IA en tu dispositivo</h3>
+          <p>TensorFlow.js + MediaPipe detecta 21 puntos clave de cada mano a 30fps sin necesidad de servidor ni internet después de la carga inicial.</p>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">🇵🇪</div>
+          <h3>LSP Peruana</h3>
+          <p>Base de datos construida con señas auténticas de la Lengua de Señas Peruana: saludos, verbos, animales, familia, colores y números.</p>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">📚</div>
+          <h3>Crece contigo</h3>
+          <p>El modo "Enseñar" permite agregar señas personalizadas al diccionario local. Exporta e importa tu colección en JSON.</p>
+        </div>
+        <div class="about-card">
+          <div class="about-card-icon">🔒</div>
+          <h3>100% Privado</h3>
+          <p>Todo el procesamiento ocurre en tu dispositivo. No se envía ningún dato a servidores. No hay cuentas, no hay tracking.</p>
+        </div>
+      </div>
+
+      <div class="about-tech">
+        <h3>Stack tecnológico</h3>
+        <div class="tech-grid">
+          <div class="tech-item">
+            <span class="tech-icon">⚡</span>
+            <div>
+              <strong>TensorFlow.js 4.10</strong>
+              <small>Motor IA en el navegador</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-icon">✋</span>
+            <div>
+              <strong>MediaPipe HandPose</strong>
+              <small>Detección de 21 keypoints</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-icon">🔊</span>
+            <div>
+              <strong>Web Speech API</strong>
+              <small>Síntesis de voz en español</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="tech-icon">💾</span>
+            <div>
+              <strong>LocalStorage DB</strong>
+              <small>Diccionario persistente</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-roadmap">
+        <h3>🗺️ Próximas funciones</h3>
+        <ul>
+          <li><span class="rm-soon">Pronto</span> Alfabeto LSP completo (A-Z)</li>
+          <li><span class="rm-soon">Pronto</span> Modo entrenamiento con captura real de gestos</li>
+          <li><span class="rm-idea">Idea</span> PWA instalable como app móvil</li>
+          <li><span class="rm-idea">Idea</span> Modo frase completa con gramática LSP</li>
+          <li><span class="rm-idea">Idea</span> Soporte multilenguaje (ASL, BSL)</li>
+        </ul>
+      </div>
+
+      <div class="about-footer">
+        <a href="https://github.com/tu-usuario/handify" target="_blank" class="github-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          Ver en GitHub
+        </a>
+        <p class="about-love">Hecho con ❤️ para la comunidad sorda peruana 🇵🇪</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mobile Nav -->
+  <nav id="mobileNav">
+    <button class="mob-btn active" data-tab="detector">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      <span>Detectar</span>
+    </button>
+    <button class="mob-btn" data-tab="diccionario">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>Dicc.</span>
+    </button>
+    <button class="mob-btn" data-tab="aprender">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span>Aprender</span>
+    </button>
+    <button class="mob-btn" data-tab="acerca">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Info</span>
+    </button>
+  </nav>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Modal detail -->
+  <div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/detector.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
